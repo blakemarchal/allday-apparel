@@ -1,9 +1,9 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // The @allday/db package is a workspace dep that ships TypeScript directly.
-  // transpilePackages tells Next.js to compile it as part of the app build.
-  transpilePackages: ['@allday/db'],
+  // Workspace packages ship TypeScript directly; Next compiles them as part
+  // of the app build.
+  transpilePackages: ['@allday/db', '@allday/workers'],
 
   // We never serve images from this app; product imagery lives on Cloudflare R2
   // behind their CDN. If a remote-image domain is ever needed, add it here.

@@ -1,0 +1,30 @@
+{
+  "name": "@allday/workers",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./queue": "./src/queue.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@allday/db": "workspace:*",
+    "bullmq": "^5.0.0",
+    "drizzle-orm": "^0.36.0",
+    "ioredis": "^5.4.0",
+    "stripe": "^17.0.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
