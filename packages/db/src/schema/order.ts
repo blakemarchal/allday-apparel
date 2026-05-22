@@ -103,6 +103,9 @@ export const reservation = pgTable(
       .notNull()
       .references(() => variant.id, { onDelete: 'restrict' }),
     qty: integer('qty').notNull(),
+    // Snapshotted at session creation so variant price changes during the
+    // 20-min checkout window don't drift the order from what the customer saw.
+    unitPriceCents: integer('unit_price_cents').notNull(),
     stripeCheckoutSessionId: text('stripe_checkout_session_id').notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     status: reservationStatusEnum('status').notNull().default('held'),

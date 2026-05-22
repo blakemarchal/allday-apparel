@@ -1,0 +1,1 @@
+ALTER TABLE "reservation" ADD COLUMN "unit_price_cents" integer NOT NULL;

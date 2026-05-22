@@ -329,6 +329,7 @@ Lifeblood of the drop concurrency story. One row per Stripe Checkout Session × 
 | `id` | uuid PK | |
 | `variant_id` | uuid FK | |
 | `qty` | int | Units held |
+| `unit_price_cents` | int | Snapshotted at session creation so a variant price edit during the customer's checkout doesn't drift the order. |
 | `stripe_checkout_session_id` | text | |
 | `expires_at` | timestamptz | Matches Stripe session expiry (20 min) |
 | `status` | enum | `held`, `consumed`, `released` |
