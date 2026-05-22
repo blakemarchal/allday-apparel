@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Drizzle
+drizzle/meta/_journal.json.bak
+
+# Docker volume data (defensive — should never be in repo)
+data/
+pgdata/
+
+# Vercel (we don't deploy to Vercel, but defensive)
+.vercel/
+
+# Turbo cache (if added later)
+.turbo/

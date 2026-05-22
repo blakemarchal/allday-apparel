@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: merch-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-merch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-merch_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-merch}
+    ports:
+      # Bound to localhost only. Port 5433 to avoid RegKnots' 5432.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-merch} -d ${POSTGRES_DB:-merch}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          # Protective ceiling so a runaway can't OOM the host (RegKnots co-tenant).
+          # Generous enough for the v1 workload; revisit when DO droplet is scaled.
+          memory: 768M
+    restart: unless-stopped
+    networks:
+      - merch-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: merch-redis
+    # AOF persistence on so BullMQ jobs survive container restarts (drop-day matters).
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    ports:
+      # Bound to localhost only. Port 6380 to avoid RegKnots' 6379.
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+    restart: unless-stopped
+    networks:
+      - merch-net
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  # Isolated from RegKnots' infra_regknots-net.
+  merch-net:
+    driver: bridge

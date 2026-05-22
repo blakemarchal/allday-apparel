@@ -1,0 +1,20 @@
+{
+  "name": "allday-merch",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @allday/web dev",
+    "dev:worker": "pnpm --filter @allday/workers dev",
+    "build:web": "pnpm --filter @allday/web build",
+    "lint:web": "pnpm --filter @allday/web lint",
+    "db:generate": "pnpm --filter @allday/db generate",
+    "db:migrate": "pnpm --filter @allday/db migrate",
+    "db:studio": "pnpm --filter @allday/db studio",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "infra:logs": "docker compose -f infra/docker-compose.yml logs -f"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
