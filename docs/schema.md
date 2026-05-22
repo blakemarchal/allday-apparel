@@ -31,6 +31,8 @@ invoice_upload ──< stock_receipt   (optional FK; receipts created via OCR'd 
 
 order ── payout_accrual          (one per paid order; % of net margin owed to Blake)
 payout_accrual >── payout_disbursement   (closes accruals when Blake actually gets paid)
+
+storefront ──< email_subscriber   (fan list for drop announcements; double opt-in)
 ```
 
 ---
@@ -388,6 +390,25 @@ A payment from Will to Blake. Closes out one or more accruals.
 
 When a disbursement is created, admin assigns it to a set of `payout_accrual` rows (sets their `disbursement_id`, flips `status` to `paid`). Sum of those accruals should reconcile to `amount_cents`; admin flags discrepancies but doesn't enforce — real-world payments include rounding and partial settlements.
 
+### `email_subscriber`
+
+Per-storefront fan email list for drop blasts and announcements. Double opt-in. CAN-SPAM compliant (unsubscribe link via `unsubscribe_token`).
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `storefront_id` | uuid FK | Lists are per-storefront. A fan can opt in to both stores independently. |
+| `email` | text | Stored lowercased; UNIQUE per storefront. |
+| `source` | enum | `popup`, `footer`, `checkout`, `drop_signup`, `manual_admin`. |
+| `confirmed_at` | timestamptz NULL | Set when the double-opt-in link is clicked. Until then, marketing sends are blocked. |
+| `confirm_token` | text UNIQUE NULL | Single-use token in the opt-in email link. Cleared (NULL) after confirmation. |
+| `unsubscribe_token` | text UNIQUE | Stable token in every marketing email's unsubscribe link. |
+| `unsubscribed_at` | timestamptz NULL | If non-null, treat as opted-out. We don't delete the row — keeps a record + prevents accidental re-subscription via stale popups. |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | |
+
+Indices: `(storefront_id, email)` UNIQUE for upsert; `(storefront_id) WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL` partial index for the "active subscribers" segment used by drop blasts; `(confirm_token)` and `(unsubscribe_token)` UNIQUE for link lookups.
+
 ---
 
 ## Reservation lifecycle (the load-bearing piece)
@@ -451,6 +472,10 @@ Customer-facing availability: `qty_on_hand - qty_reserved` is what powers "X lef
 - `payout_accrual(disbursement_id)` — disbursement reconciliation
 - `invoice_upload(status, created_at DESC)` — admin "needs review" queue
 - `stock_receipt(source_invoice_upload_id)` — trace receipts to source invoice
+- `email_subscriber(storefront_id, email)` UNIQUE — upsert on opt-in
+- `email_subscriber(storefront_id) WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL` — active-subscriber segment (partial index)
+- `email_subscriber(confirm_token)` UNIQUE — opt-in link
+- `email_subscriber(unsubscribe_token)` UNIQUE — unsubscribe link
 
 ---
 

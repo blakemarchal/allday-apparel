@@ -8,3 +8,4 @@ export * from './drop';
 export * from './order';
 export * from './stripe';
 export * from './payout';
+export * from './email';

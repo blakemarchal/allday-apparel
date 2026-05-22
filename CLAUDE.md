@@ -89,4 +89,15 @@ scripts/
 
 ## Build status
 
-Not yet bootstrapped. See `docs/build-plan.md` once written, or the active task list in this session. Schema sketch lives at `docs/schema.md` and should be reviewed before any Drizzle code is written.
+Bootstrapped. Three commits on `main`: scaffold → Drizzle schema → Next.js storefront app. Local Docker stack runs end-to-end (Postgres :5433, Redis :6380), schema applied, app verified for all four host scenarios (apparel, character, admin, unconfigured). See active task list in session.
+
+## Deferred until Will's intake answers come back
+
+The setup-and-intake form was sent to Will (`Will_Allday_Merch_Intake.docx`). Items below are gated on his answers and should NOT be built speculatively:
+
+- **Pre-orders.** Section 4 asks if launch includes pre-orders. If yes, add `preorder_ships_at` to `drop` (or `variant`) and an "allow oversell" flag to skip inventory checks. Schema seam will be retrofittable cheaply.
+- **Multi-admin logins.** Section 6 asks about managers/family needing their own logins. The `admin_user` table + role design lands with task #10 (Supabase auth) regardless — just need Will's answer to know if we ship single-user-only for v1 or include the role model up front.
+- **Brand values.** All of section 3 (logos, fonts, colors, character description, brand-feel words, catchphrases, things to avoid, inspirations) feeds `theme_config.tokens` and `theme_config.landing`. Build the theming system with placeholders; swap values when Will answers.
+- **Product catalog values.** Section 4 — types of products, size ranges, total count, signed items, drop style (qty vs time). Schema accommodates all; we just need values for seed data.
+- **Shipping numbers.** Section 5 — free-shipping threshold + flat-rate value. Schema has `free_shipping_threshold_cents` and `flat_shipping_cents` on storefront; populate from Will's answer.
+- **Email setup.** Section 5 — Will to create a Proton inbox + share domain DNS access. Resend domain auth + ImprovMX aliases configured once those land.

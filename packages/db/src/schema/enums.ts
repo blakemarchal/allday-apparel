@@ -42,3 +42,12 @@ export const invoiceUploadSourceEnum = pgEnum('invoice_upload_source', [
   'email_inbound',
   'api',
 ]);
+
+// Where an email_subscriber row was captured from.
+export const emailSubscriberSourceEnum = pgEnum('email_subscriber_source', [
+  'popup',
+  'footer',
+  'checkout',
+  'drop_signup',
+  'manual_admin',
+]);
