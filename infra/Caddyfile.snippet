@@ -1,0 +1,28 @@
+# Allday Merch — append to /etc/caddy/Caddyfile on the production VPS,
+# AFTER the RegKnots block.
+#
+# Replace <ROOT> with Will's domain when he provides it in section 1 of the
+# intake form. All three subdomains route to the same Next.js process on
+# :3001; the app uses the Host header to resolve the storefront via the
+# storefront_host table (or detects the `admin.` prefix).
+#
+# Static TLS only — known hostnames, no on-demand cert issuance (unlike the
+# RegKnots block which supports SaaS customer custom domains).
+#
+# Stripe webhook URL: https://admin.<ROOT>/api/stripe/webhook
+#   (configure this in the Stripe Dashboard once the domain is live.)
+
+apparel.<ROOT>, character.<ROOT>, admin.<ROOT> {
+	log {
+		output file /var/log/caddy/merch-access.log {
+			roll_size 100MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format json
+	}
+
+	# Reverse proxy preserves the original Host header by default, which is
+	# what the storefront lookup relies on.
+	reverse_proxy 127.0.0.1:3001
+}

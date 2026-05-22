@@ -1,0 +1,29 @@
+[Unit]
+Description=Allday Merch — Next.js web (storefronts + admin)
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/AlldayApparel/apps/web
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/AlldayApparel/.env.production
+# `start` script in apps/web/package.json binds to 0.0.0.0:3001 to avoid
+# RegKnots' :3000. Caddy reverse-proxies the merch subdomains here.
+ExecStart=/usr/bin/pnpm start
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=merch-web
+
+# Protective memory cap so a runaway can't OOM RegKnots on the shared VPS.
+# Bump when the DO Droplet is vertically resized; remove if merch moves to
+# its own VPS.
+MemoryHigh=1G
+MemoryMax=1500M
+
+[Install]
+WantedBy=multi-user.target

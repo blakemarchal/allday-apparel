@@ -53,22 +53,20 @@ v1 ships from Will's garage (self-fulfillment), US-only, with the door left open
 ```
 apps/
   web/              Next.js App Router — storefronts + admin
-infra/
+infra/              (runtime + deploy artifacts; mirrors RegKnots' layout)
   docker-compose.yml   Postgres + Redis for merch
   init.sql             Initial DB setup
-deploy/
-  merch-web.service       systemd units (mirror RegKnots' pattern)
-  merch-worker.service
-  Caddyfile.snippet       Block to add to /etc/caddy/Caddyfile
+  merch-web.service    systemd unit for Next.js (mirror RegKnots' pattern)
+  merch-worker.service systemd unit for BullMQ worker
+  Caddyfile.snippet    Block to append to /etc/caddy/Caddyfile
+  README.md            Brief deploy notes
 packages/
-  db/              Drizzle schema + migrations + client
-  workers/         BullMQ jobs (webhook processing, drop activation, low-stock, email blasts)
+  db/               Drizzle schema + migrations + client
+  workers/          BullMQ jobs (webhook processing, drop activation, low-stock, email blasts)
 docs/
-  schema.md        Canonical schema sketch (review before code)
-  build-plan.md    Build order (mirrors the task list)
+  schema.md         Canonical schema sketch (review before code)
 scripts/
-  deploy.sh        Production deploy
-  seed.ts          Seed data for demo
+  deploy.sh         Production deploy (TBD)
 ```
 
 ## Production / VPS context
