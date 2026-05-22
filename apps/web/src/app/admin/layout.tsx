@@ -56,10 +56,12 @@ function AdminBottomNav() {
     { href: '/admin/products', label: 'Products' },
     { href: '/admin/drops', label: 'Drops' },
     { href: '/admin/stock', label: 'Stock' },
+    { href: '/admin/payouts', label: 'Payouts' },
+    { href: '/admin/team', label: 'Team' },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-background grid grid-cols-5">
+    <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-background grid grid-cols-7 overflow-x-auto">
       {items.map((item) => (
         <Link
           key={item.href}
