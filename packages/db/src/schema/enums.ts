@@ -51,3 +51,16 @@ export const emailSubscriberSourceEnum = pgEnum('email_subscriber_source', [
   'drop_signup',
   'manual_admin',
 ]);
+
+// Admin user roles. `owner` is Will (governance: invites/removes other admins).
+// `manager` is close-to-par for day-to-day ops (orders, products, drops, stock).
+// Wife + Blake + future helpers are managers.
+export const adminRoleEnum = pgEnum('admin_role', ['owner', 'manager']);
+
+// `invited` = row exists pre-magic-link-click. `active` = signed in at least once.
+// `disabled` = revoked access without deleting history.
+export const adminUserStatusEnum = pgEnum('admin_user_status', [
+  'invited',
+  'active',
+  'disabled',
+]);
