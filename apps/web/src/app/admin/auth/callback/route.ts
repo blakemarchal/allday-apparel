@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { headers } from 'next/headers';
 import { eq } from 'drizzle-orm';
 import { db } from '@allday/db';
 import { adminUser } from '@allday/db/schema';
@@ -18,13 +19,24 @@ export const dynamic = 'force-dynamic';
  * If the email isn't in admin_user, the user lands at /admin and the
  * layout's auth check renders the "not authorized" view. The Supabase
  * auth user still exists; admin row can be added later without re-inviting.
+ *
+ * Redirect URL construction:
+ *   Build absolute URLs from the actual incoming Host header rather than
+ *   from req.url. In dev, Next.js binds to --hostname 0.0.0.0 and reflects
+ *   that hostname in req.url even when the request comes in via
+ *   admin.localhost — using req.url would send the user to 0.0.0.0:3001
+ *   which the browser can't navigate to.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const url = new URL(req.url);
-  const code = url.searchParams.get('code');
+  const hdrs = await headers();
+  const host = hdrs.get('host') ?? 'admin.localhost:3001';
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  const baseUrl = `${protocol}://${host}`;
+
+  const code = new URL(req.url).searchParams.get('code');
 
   if (!code) {
-    return NextResponse.redirect(new URL('/admin/login?error=no-code', req.url));
+    return NextResponse.redirect(`${baseUrl}/admin/login?error=no-code`);
   }
 
   let supabase;
@@ -33,17 +45,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'auth-not-configured';
     return NextResponse.redirect(
-      new URL(`/admin/login?error=${encodeURIComponent(msg)}`, req.url),
+      `${baseUrl}/admin/login?error=${encodeURIComponent(msg)}`,
     );
   }
 
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) {
     return NextResponse.redirect(
-      new URL(
-        `/admin/login?error=${encodeURIComponent(error?.message ?? 'auth-failed')}`,
-        req.url,
-      ),
+      `${baseUrl}/admin/login?error=${encodeURIComponent(error?.message ?? 'auth-failed')}`,
     );
   }
 
@@ -64,5 +73,5 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       .where(eq(adminUser.email, email));
   }
 
-  return NextResponse.redirect(new URL('/admin', req.url));
+  return NextResponse.redirect(`${baseUrl}/admin`);
 }

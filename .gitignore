@@ -16,6 +16,18 @@ next-env.d.ts
 .env.*.local
 !.env.example
 
+# Anything explicitly carrying secrets — credentials, config dumps, key files.
+# If you have a real password / token to keep, use a password manager,
+# not a file in the repo.
+**/secrets/**
+**/*.key
+**/*.pem
+*credentials*
+*-secrets.*
+secrets.*
+# Catch-all for ad-hoc config notes that have caught passwords before.
+docs/*.txt
+
 # Logs
 *.log
 npm-debug.log*
