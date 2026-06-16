@@ -38,7 +38,7 @@ v1 ships from Will's garage (self-fulfillment), US-only, with the door left open
 | Tenancy | App-layer `storefront_id` scoping. No RLS. |
 | Variant model | Normalized: Product → ProductOption → ProductOptionValue → Variant → VariantOptionValue → InventoryItem. |
 | Drops | Lightweight reservation system (`qty_on_hand`, `qty_reserved`, `reservation` table) gated by Stripe session expiry. |
-| Routing | Subdomain per storefront, resolved via a `storefront_host` lookup table. |
+| Routing | **Apparel = apex `allday-apparel.com`; character = `/WillAllday` path on the SAME host; admin = `admin.` subdomain.** Resolved via `storefront_host` (host→storefront) + a path-prefix rule for the character store. NOTE: reverses the original subdomain-per-storefront plan. As of this decision, path-based character routing is NOT yet implemented in code (dev still uses `character.localhost`); apparel-at-apex + admin work today. See the open routing-refactor task. |
 | Isolation | Data stores in Docker on a separate `merch-net`. App processes as systemd units (mirrors RegKnots). |
 | Image storage | Cloudflare R2 from day one. Never local disk. |
 | Email (send) | Resend, domain-authenticated. |
