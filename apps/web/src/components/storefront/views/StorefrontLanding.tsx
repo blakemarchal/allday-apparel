@@ -61,13 +61,15 @@ export default async function StorefrontLanding() {
 
 function CrossStore({ base }: { base: string }) {
   const c = crossLink(base);
+  // Plain <a> (full load) so crossing stores re-resolves the per-store theme —
+  // the shared root layout would otherwise keep the current store's palette.
   return (
-    <Link
+    <a
       href={c.href}
       className="text-base text-muted-foreground hover:text-foreground underline underline-offset-4"
     >
       or visit {c.label} →
-    </Link>
+    </a>
   );
 }
 

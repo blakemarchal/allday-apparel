@@ -23,9 +23,13 @@ export function StorefrontHeader({
       </Link>
       <div className="flex items-center gap-4 text-sm shrink-0">
         {cross && (
-          <Link href={cross.href} className="text-muted-foreground hover:text-foreground hidden sm:inline">
+          // Plain <a> (full page load), NOT next/link: the two stores share the
+          // root layout, which sets the theme on <body> and persists across
+          // client-side nav. A hard navigation re-resolves the theme so crossing
+          // apparel ↔ character actually repaints the palette + fonts.
+          <a href={cross.href} className="text-muted-foreground hover:text-foreground hidden sm:inline">
             {cross.label} →
-          </Link>
+          </a>
         )}
         <Link href={`${base}/cart`} className="flex items-center gap-1.5 hover:opacity-80">
           <span>Cart</span>

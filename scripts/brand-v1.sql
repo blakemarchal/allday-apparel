@@ -36,18 +36,20 @@ UPDATE theme_config SET
   updated_at = now()
 WHERE storefront_id = (SELECT id FROM storefront WHERE slug = 'apparel');
 
+-- Palette pulled from Will's actual ring gear: vivid purple + gold + white,
+-- on an arena-dark stage. (Was a guessed red; corrected from his photo.)
 UPDATE theme_config SET
   tokens = '{
     "colors": {
-      "background": "#0A0A0B",
-      "foreground": "#F2F2F0",
-      "primary": "#E11D2A",
+      "background": "#0C0A12",
+      "foreground": "#F4F1EA",
+      "primary": "#7C3AED",
       "primaryForeground": "#FFFFFF",
-      "accent": "#F5C518",
-      "accentForeground": "#0A0A0B",
-      "muted": "#161618",
-      "mutedForeground": "#9A9A9E",
-      "border": "#2A2A2E"
+      "accent": "#E7B53B",
+      "accentForeground": "#0C0A12",
+      "muted": "#18141F",
+      "mutedForeground": "#A89FB8",
+      "border": "#2D2640"
     },
     "fonts": {
       "body": "var(--font-inter), system-ui, sans-serif",
@@ -58,7 +60,7 @@ UPDATE theme_config SET
   landing = '{
     "hero": {
       "eyebrow": "WILL ALLDAY",
-      "headline": "NO DAYS OFF.",
+      "headline": "RIDE THE LIGHTNING",
       "sub": "Ringside-tested gear for the ones who never clock out. Limited drops, loud designs, gone when they''re gone.",
       "ctaLabel": "Enter the shop"
     }
