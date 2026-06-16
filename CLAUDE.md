@@ -87,7 +87,16 @@ scripts/
 
 ## Build status
 
-Bootstrapped. Three commits on `main`: scaffold → Drizzle schema → Next.js storefront app. Local Docker stack runs end-to-end (Postgres :5433, Redis :6380), schema applied, app verified for all four host scenarios (apparel, character, admin, unconfigured). See active task list in session.
+**LIVE in production** at `https://allday-apparel.com` (apparel storefront) + `https://admin.allday-apparel.com` (admin), deployed to the VPS at `/opt/AlldayApparel`. Full admin suite + storefront + checkout pipeline built and deployed. Local + prod both run the same stack.
+
+Production specifics:
+- **Domain:** `allday-apparel.com` (GoDaddy registrar, GoDaddy DNS). Apex `A @` + `A admin` → `68.183.130.3`, 600s TTL. `www` CNAME → apex.
+- **Routing:** apparel = apex; character = `/WillAllday` path (NOT yet implemented — see task); admin = `admin.` subdomain.
+- **TLS:** Caddy auto-issues Let's Encrypt certs for the merch hostnames (static, NOT on-demand). Merch Caddy block appended to `/etc/caddy/Caddyfile` after the RegKnots block. **Gotcha:** Caddy runs as user `caddy`; any new `/var/log/caddy/*.log` must be pre-created with `caddy:caddy` ownership or the config reload fails with "permission denied". Also the systemd reload timeout (~90s) can kill a reload that's provisioning fresh certs — use `caddy reload --config ... --force` directly if needed.
+- **Compose:** the VPS only had docker-compose **v1** (project `infra`, same as RegKnots → volume-name collision risk). Installed the **Compose v2 plugin** binary at `/usr/libexec/docker/cli-plugins/docker-compose`. Merch compose pins `name: merch` so volumes/networks are `merch_*`, never `infra_*`. Bring up: `cd /opt/AlldayApparel/infra && docker compose up -d`.
+- **Services:** `merch-web` (:3001) + `merch-worker` systemd units. Data stores: `merch-postgres` (:5433) + `merch-redis` (:6380) containers on `merch_merch-net`.
+- **Prod env:** `/opt/AlldayApparel/.env.production` (chmod 600). Stripe keys still placeholder → checkout self-disables until real keys land. Supabase prod redirect URL `https://admin.allday-apparel.com/admin/auth/callback` must be added to the Supabase project Auth config.
+- **Transport:** code reached the VPS via tar-over-ssh (incl. `.git`). No GitHub remote yet — pending `gh auth` (gh not installed locally; winget install failed). Retrofit: `git remote add origin … && git push`.
 
 ## Deferred until Will's intake answers come back
 
