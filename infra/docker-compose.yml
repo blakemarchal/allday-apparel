@@ -1,3 +1,9 @@
+# Explicit project name. CRITICAL: the compose dir is named `infra`, same as
+# RegKnots' compose dir — without this, both would default to project "infra"
+# and collide on volume/network names (e.g. infra_pgdata), letting merch mount
+# RegKnots' database. `name: merch` namespaces everything as merch_* instead.
+name: merch
+
 services:
   postgres:
     image: postgres:16
