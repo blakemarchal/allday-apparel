@@ -14,6 +14,8 @@ next-env.d.ts
 .env
 .env.local
 .env.*.local
+.env.production
+.env.*.production
 !.env.example
 
 # Anything explicitly carrying secrets — credentials, config dumps, key files.
