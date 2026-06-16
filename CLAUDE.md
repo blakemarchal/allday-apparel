@@ -38,7 +38,7 @@ v1 ships from Will's garage (self-fulfillment), US-only, with the door left open
 | Tenancy | App-layer `storefront_id` scoping. No RLS. |
 | Variant model | Normalized: Product → ProductOption → ProductOptionValue → Variant → VariantOptionValue → InventoryItem. |
 | Drops | Lightweight reservation system (`qty_on_hand`, `qty_reserved`, `reservation` table) gated by Stripe session expiry. |
-| Routing | **Apparel = apex `allday-apparel.com`; character = `/WillAllday` path on the SAME host; admin = `admin.` subdomain.** Resolved via `storefront_host` (host→storefront) + a path-prefix rule for the character store. NOTE: reverses the original subdomain-per-storefront plan. As of this decision, path-based character routing is NOT yet implemented in code (dev still uses `character.localhost`); apparel-at-apex + admin work today. See the open routing-refactor task. |
+| Routing | **Apparel = apex `allday-apparel.com`; character = `/WillAllday` path on the SAME host; admin = `admin.` subdomain.** Implemented + live. Middleware sets `x-pathname`; `getCurrentStorefront()` resolves by host + path (returns a `basePath`). Cart cookie is keyed by `storefrontId` so the two stores never share a cart. Shared view components under `components/storefront/views/`; root + `app/WillAllday/*` routes are thin re-export shims. (Reversed the original subdomain-per-storefront plan.) |
 | Isolation | Data stores in Docker on a separate `merch-net`. App processes as systemd units (mirrors RegKnots). |
 | Image storage | Cloudflare R2 from day one. Never local disk. |
 | Email (send) | Resend, domain-authenticated. |
@@ -96,7 +96,8 @@ Production specifics:
 - **Compose:** the VPS only had docker-compose **v1** (project `infra`, same as RegKnots → volume-name collision risk). Installed the **Compose v2 plugin** binary at `/usr/libexec/docker/cli-plugins/docker-compose`. Merch compose pins `name: merch` so volumes/networks are `merch_*`, never `infra_*`. Bring up: `cd /opt/AlldayApparel/infra && docker compose up -d`.
 - **Services:** `merch-web` (:3001) + `merch-worker` systemd units. Data stores: `merch-postgres` (:5433) + `merch-redis` (:6380) containers on `merch_merch-net`.
 - **Prod env:** `/opt/AlldayApparel/.env.production` (chmod 600). Stripe keys still placeholder → checkout self-disables until real keys land. Supabase prod redirect URL `https://admin.allday-apparel.com/admin/auth/callback` must be added to the Supabase project Auth config.
-- **Transport:** code reached the VPS via tar-over-ssh (incl. `.git`). No GitHub remote yet — pending `gh auth` (gh not installed locally; winget install failed). Retrofit: `git remote add origin … && git push`.
+- **Transport:** code reaches the VPS via tar-over-ssh (incl. `.git`). No GitHub remote yet — pending `gh auth` (gh not installed locally; winget install failed). Retrofit: `git remote add origin … && git push`, then deploys become `git pull`.
+- **DEPLOY GOTCHA — tar does not delete.** tar-over-ssh only adds/overwrites; files deleted or moved in a commit still linger on the VPS and can break the build (a stale `app/cart/actions.ts` with an old signature 502'd prod once). After a tar deploy, remove deletions manually or run `git -C /opt/AlldayApparel clean -fd` (gitignored `.env*`/`.next`/`node_modules` are preserved). This is the #1 reason to finish the GitHub remote so deploys use `git pull` (delete-aware). Deploy = transport → `clean` stale → `set -a; . ./.env.production; set +a; pnpm build:web` → `systemctl restart merch-web` (+ `merch-worker` if changed).
 
 ## Deferred until Will's intake answers come back
 
