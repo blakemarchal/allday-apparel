@@ -5,9 +5,16 @@ import { storefront, storefrontHost } from '@allday/db/schema';
 import { eq } from 'drizzle-orm';
 
 /**
- * The storefront context resolved from the incoming request hostname.
- * `null` when no storefront_host row matches — caller decides whether to 404,
- * redirect, or render a not-configured screen.
+ * The character store lives at this path prefix on the apparel host
+ * (allday-apparel.com/WillAllday), NOT a subdomain. Apparel is the apex root.
+ */
+export const CHARACTER_BASE_PATH = '/WillAllday';
+const CHARACTER_SLUG = 'character';
+
+/**
+ * Resolved storefront for the current request. `basePath` is '' for the
+ * apparel apex and '/WillAllday' for the character store — prepend it to all
+ * storefront-internal links so they stay within the right store.
  */
 export type StorefrontContext = {
   id: string;
@@ -16,64 +23,121 @@ export type StorefrontContext = {
   currency: string;
   hostname: string;
   isPrimaryHost: boolean;
+  basePath: string;
 } | null;
 
-/**
- * Strip port from a host header value. `apparel.localhost:3001` -> `apparel.localhost`.
- */
 function normalizeHost(host: string): string {
   return host.split(':')[0]!.toLowerCase();
 }
 
-/**
- * Resolve the storefront for a given hostname via the storefront_host lookup.
- * Returns null if no row matches.
- */
-export async function getStorefrontByHost(host: string): Promise<StorefrontContext> {
-  const hostname = normalizeHost(host);
+type Row = { id: string; slug: string; name: string; currency: string };
 
+async function selectByHost(
+  hostname: string,
+): Promise<{ row: Row; isPrimary: boolean } | null> {
   const rows = await db
     .select({
       id: storefront.id,
       slug: storefront.slug,
       name: storefront.name,
       currency: storefront.currency,
-      hostname: storefrontHost.hostname,
       isPrimary: storefrontHost.isPrimary,
     })
     .from(storefrontHost)
     .innerJoin(storefront, eq(storefrontHost.storefrontId, storefront.id))
     .where(eq(storefrontHost.hostname, hostname))
     .limit(1);
-
-  const row = rows[0];
-  if (!row) return null;
-
+  const r = rows[0];
+  if (!r) return null;
   return {
-    id: row.id,
-    slug: row.slug,
-    name: row.name,
-    currency: row.currency,
-    hostname: row.hostname,
-    isPrimaryHost: row.isPrimary,
+    row: { id: r.id, slug: r.slug, name: r.name, currency: r.currency },
+    isPrimary: r.isPrimary,
   };
 }
 
+async function selectBySlug(slug: string): Promise<Row | null> {
+  const rows = await db
+    .select({
+      id: storefront.id,
+      slug: storefront.slug,
+      name: storefront.name,
+      currency: storefront.currency,
+    })
+    .from(storefront)
+    .where(eq(storefront.slug, slug))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+function isCharacterPath(pathname: string): boolean {
+  return pathname === CHARACTER_BASE_PATH || pathname.startsWith(`${CHARACTER_BASE_PATH}/`);
+}
+
 /**
- * Resolve the current request's storefront context using Next's `headers()`.
- * Call from Server Components / Server Actions / Route Handlers.
+ * Resolve the storefront for the current request from host + path:
+ *   - host doesn't map to a storefront  → null (unconfigured)
+ *   - path under /WillAllday            → character store (basePath set)
+ *   - otherwise                         → the host's storefront (apparel)
+ *
+ * Tying the character path to a configured host means /WillAllday only works
+ * on a real storefront host, never a stray one.
  */
 export async function getCurrentStorefront(): Promise<StorefrontContext> {
   const hdrs = await headers();
   const host = hdrs.get('host') ?? '';
+  const pathname = hdrs.get('x-pathname') ?? '';
   if (!host) return null;
-  return getStorefrontByHost(host);
+
+  const hostname = normalizeHost(host);
+  const hostMatch = await selectByHost(hostname);
+  if (!hostMatch) return null;
+
+  if (isCharacterPath(pathname)) {
+    const ch = await selectBySlug(CHARACTER_SLUG);
+    if (!ch) return null;
+    return {
+      id: ch.id,
+      slug: ch.slug,
+      name: ch.name,
+      currency: ch.currency,
+      hostname,
+      isPrimaryHost: false,
+      basePath: CHARACTER_BASE_PATH,
+    };
+  }
+
+  return {
+    id: hostMatch.row.id,
+    slug: hostMatch.row.slug,
+    name: hostMatch.row.name,
+    currency: hostMatch.row.currency,
+    hostname,
+    isPrimaryHost: hostMatch.isPrimary,
+    basePath: '',
+  };
 }
 
-/**
- * Convenience: is the current request hitting the admin subdomain?
- * Admin is keyed by hostname prefix `admin.` for v1 (no DB lookup needed).
- */
+/** Resolve a storefront by id (used by server actions that receive an explicit id). */
+export async function getStorefrontById(id: string): Promise<Row | null> {
+  const rows = await db
+    .select({
+      id: storefront.id,
+      slug: storefront.slug,
+      name: storefront.name,
+      currency: storefront.currency,
+    })
+    .from(storefront)
+    .where(eq(storefront.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** basePath for a storefront slug. Only the character store is path-prefixed. */
+export function basePathForSlug(slug: string): string {
+  return slug === CHARACTER_SLUG ? CHARACTER_BASE_PATH : '';
+}
+
+/** Is the current request hitting the admin subdomain? */
 export async function isAdminRequest(): Promise<boolean> {
   const hdrs = await headers();
   const host = hdrs.get('host') ?? '';

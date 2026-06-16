@@ -2,14 +2,22 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Edge-runtime session refresh. Called from middleware.ts on every request.
- * Without this, access tokens would expire and the Server-Component-side
- * auth check would silently re-refresh on every page load.
+ * Edge-runtime middleware work, two jobs:
  *
- * No-op when Supabase env vars aren't set — keeps early dev quiet.
+ *  1. Forward the request pathname to server components via an `x-pathname`
+ *     header. Storefront resolution + theming need it to tell the apparel
+ *     root (`/…`) apart from the `/WillAllday` character store on the SAME
+ *     host. (Edge middleware can't query Postgres, so we only pass the path;
+ *     the DB lookup happens in the Node-runtime server components.)
+ *
+ *  2. Refresh the Supabase auth session (admin). No-op when Supabase env is
+ *     unset (early dev / storefront-only).
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
-  let supabaseResponse = NextResponse.next({ request });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', request.nextUrl.pathname);
+
+  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -23,18 +31,15 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => {
-          request.cookies.set(name, value);
-        });
-        supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => {
-          supabaseResponse.cookies.set(name, value, options);
-        });
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options),
+        );
       },
     },
   });
 
-  // Refresh if needed. Discard the user; we just want the cookie side-effect.
   await supabase.auth.getUser();
 
   return supabaseResponse;

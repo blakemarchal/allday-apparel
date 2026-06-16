@@ -13,17 +13,18 @@ type Variant = {
 };
 
 /**
- * Client component because the variant selector needs to react to taps
- * (showing the matched price + stock state) before the cart action fires.
- *
- * When the product has a single variant, render an Add-to-cart button only —
- * no selector clutter. When there are multiple, show a list. The proper
- * Size × Color matrix UI lands with #22 (options + matrix).
+ * Variant selector + add-to-cart. Takes the resolved storefrontId and basePath
+ * so it adds to the correct store's cart and routes to that store's cart page.
+ * Proper Size × Color matrix UI lands with #22; for now variants are buttons.
  */
 export function PdpAddToCart({
+  storefrontId,
+  basePath,
   variants,
   currency,
 }: {
+  storefrontId: string;
+  basePath: string;
   variants: Variant[];
   currency: string;
 }) {
@@ -34,18 +35,17 @@ export function PdpAddToCart({
 
   const selected = variants.find((v) => v.id === selectedId);
   if (!selected) return null;
-
   const soldOut = selected.available <= 0;
 
   const onAdd = (): void => {
     setError(null);
     startTransition(async () => {
-      const result = await addToCartAction(selected.id);
+      const result = await addToCartAction(storefrontId, selected.id);
       if (result?.error) {
         setError(result.error);
         return;
       }
-      router.push('/cart');
+      router.push(`${basePath}/cart`);
     });
   };
 
@@ -53,9 +53,7 @@ export function PdpAddToCart({
     <div>
       {variants.length > 1 && (
         <div className="mb-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-            Variant
-          </p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Variant</p>
           <div className="grid grid-cols-2 gap-2">
             {variants.map((v) => (
               <button
@@ -63,20 +61,14 @@ export function PdpAddToCart({
                 type="button"
                 onClick={() => setSelectedId(v.id)}
                 className={`text-left px-3 py-2 rounded border ${
-                  v.id === selectedId
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:bg-muted/30'
+                  v.id === selectedId ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'
                 }`}
               >
                 <div className="font-mono text-xs">{v.sku}</div>
                 <div className="text-sm font-medium tabular-nums mt-0.5">
                   {formatMoney(v.priceCents, currency)}
                 </div>
-                {v.available <= 0 && (
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    Sold out
-                  </div>
-                )}
+                {v.available <= 0 && <div className="text-xs text-muted-foreground mt-0.5">Sold out</div>}
               </button>
             ))}
           </div>
