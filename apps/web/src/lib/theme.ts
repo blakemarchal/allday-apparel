@@ -5,13 +5,11 @@ import { db } from '@allday/db';
 import { themeConfig } from '@allday/db/schema';
 
 /**
- * Theme tokens consumed by the storefront UI. Stored as `jsonb` on
- * theme_config.tokens (per-storefront). The shape is *the contract* —
- * once Will sends his brand input, only the values change.
- *
- * Real values are seeded as placeholders today (clean/premium for apparel,
- * gritty/loud for character). Swap when Will answers section 3 of the
- * intake form.
+ * Theme tokens, stored per-storefront as jsonb on theme_config.tokens and
+ * projected onto CSS custom properties on <body>. Font values reference the
+ * next/font CSS variables defined on <html> in layout.tsx (e.g.
+ * "var(--font-fraunces), serif"), so swapping a store's typeface is a token
+ * edit — no code change.
  */
 export type ThemeTokens = {
   colors: {
@@ -32,7 +30,9 @@ export type ThemeTokens = {
   radius: string;
 };
 
-/** Used for unconfigured hosts and as a defensive fallback. */
+const SANS = 'var(--font-inter), system-ui, -apple-system, sans-serif';
+
+/** Fallback for unconfigured hosts / missing rows. */
 export const DEFAULT_THEME: ThemeTokens = {
   colors: {
     background: '#ffffff',
@@ -45,17 +45,11 @@ export const DEFAULT_THEME: ThemeTokens = {
     mutedForeground: '#737373',
     border: '#e5e5e5',
   },
-  fonts: {
-    body: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    heading: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  },
+  fonts: { body: SANS, heading: SANS },
   radius: '0.375rem',
 };
 
-/**
- * Hardcoded admin theme. Admin doesn't have a storefront_id so it doesn't
- * live in theme_config — keep it neutral and trust-signal blue.
- */
+/** Admin chrome — neutral with a trust-signal blue. No DB row (admin has no storefront). */
 export const ADMIN_THEME: ThemeTokens = {
   colors: {
     background: '#fafafa',
@@ -68,27 +62,17 @@ export const ADMIN_THEME: ThemeTokens = {
     mutedForeground: '#737373',
     border: '#e5e5e5',
   },
-  fonts: {
-    body: 'system-ui, -apple-system, sans-serif',
-    heading: 'system-ui, -apple-system, sans-serif',
-  },
+  fonts: { body: SANS, heading: SANS },
   radius: '0.375rem',
 };
 
-/**
- * Fetch the theme tokens for a storefront. Returns DEFAULT_THEME if no row
- * exists yet (storefront created but not themed) or if the stored tokens are
- * partial — missing keys merge from defaults.
- */
 export async function getThemeForStorefront(storefrontId: string): Promise<ThemeTokens> {
   const [row] = await db
     .select({ tokens: themeConfig.tokens })
     .from(themeConfig)
     .where(eq(themeConfig.storefrontId, storefrontId))
     .limit(1);
-
   if (!row || !row.tokens) return DEFAULT_THEME;
-
   return mergeWithDefaults(row.tokens as Partial<ThemeTokens>);
 }
 
@@ -100,13 +84,6 @@ function mergeWithDefaults(t: Partial<ThemeTokens>): ThemeTokens {
   };
 }
 
-/**
- * Convert tokens to an inline-style object setting CSS custom properties.
- * Used on `<body>` so all child CSS can reference `var(--color-primary)` etc.
- *
- * Cast through Record<string, string> because React's CSSProperties type
- * doesn't allow `--`-prefixed keys.
- */
 export function themeStyleVars(t: ThemeTokens): CSSProperties {
   return {
     '--color-background': t.colors.background,
@@ -122,4 +99,32 @@ export function themeStyleVars(t: ThemeTokens): CSSProperties {
     '--font-heading': t.fonts.heading,
     '--radius': t.radius,
   } as CSSProperties;
+}
+
+/**
+ * Landing hero content, stored per-storefront on theme_config.landing as
+ * { hero: { ... } }. Lets us give each store real brand voice without code.
+ */
+export type LandingHero = {
+  eyebrow: string;
+  headline: string;
+  sub: string;
+  ctaLabel: string;
+};
+
+const DEFAULT_HERO: LandingHero = {
+  eyebrow: '',
+  headline: '',
+  sub: '',
+  ctaLabel: 'Shop',
+};
+
+export async function getLandingHero(storefrontId: string): Promise<LandingHero> {
+  const [row] = await db
+    .select({ landing: themeConfig.landing })
+    .from(themeConfig)
+    .where(eq(themeConfig.storefrontId, storefrontId))
+    .limit(1);
+  const hero = (row?.landing as { hero?: Partial<LandingHero> } | null)?.hero;
+  return { ...DEFAULT_HERO, ...(hero ?? {}) };
 }
