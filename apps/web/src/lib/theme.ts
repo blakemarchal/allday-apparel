@@ -110,6 +110,8 @@ export type LandingHero = {
   headline: string;
   sub: string;
   ctaLabel: string;
+  /** Optional full-bleed hero background image (e.g. Will's entrance shot). */
+  image: string;
 };
 
 const DEFAULT_HERO: LandingHero = {
@@ -117,6 +119,7 @@ const DEFAULT_HERO: LandingHero = {
   headline: '',
   sub: '',
   ctaLabel: 'Shop',
+  image: '',
 };
 
 export async function getLandingHero(storefrontId: string): Promise<LandingHero> {

@@ -6,6 +6,7 @@ import { product, variant, inventoryItem } from '@allday/db/schema';
 import { getCurrentStorefront } from '@/lib/storefront';
 import { cartItemCount } from '@/lib/cart';
 import { StorefrontHeader } from '@/components/storefront/Header';
+import { ProductImage } from '@/components/storefront/ProductImage';
 import { PdpAddToCart } from '@/components/storefront/PdpAddToCart';
 
 type Params = Promise<{ slug: string }>;
@@ -17,7 +18,12 @@ export default async function PdpPage({ params }: { params: Params }) {
   const { slug } = await params;
 
   const [p] = await db
-    .select({ id: product.id, title: product.title, description: product.description })
+    .select({
+      id: product.id,
+      title: product.title,
+      description: product.description,
+      imageUrl: product.imageUrl,
+    })
     .from(product)
     .where(
       and(
@@ -61,6 +67,9 @@ export default async function PdpPage({ params }: { params: Params }) {
             ← Shop
           </Link>
         </p>
+        <div className="aspect-square w-full max-w-md bg-muted rounded overflow-hidden mb-6">
+          <ProductImage src={p.imageUrl} alt={p.title} />
+        </div>
         <h1 className="text-4xl font-heading font-bold">{p.title}</h1>
         {p.description && <p className="mt-3 text-muted-foreground whitespace-pre-wrap">{p.description}</p>}
         <div className="mt-6">

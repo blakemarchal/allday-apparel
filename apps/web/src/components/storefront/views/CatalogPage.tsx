@@ -6,6 +6,7 @@ import { product, variant } from '@allday/db/schema';
 import { getCurrentStorefront, CHARACTER_BASE_PATH } from '@/lib/storefront';
 import { cartItemCount } from '@/lib/cart';
 import { StorefrontHeader } from '@/components/storefront/Header';
+import { ProductImage } from '@/components/storefront/ProductImage';
 import { formatMoney } from '@/lib/money';
 
 function crossLink(basePath: string): { href: string; label: string } {
@@ -25,6 +26,7 @@ export default async function CatalogPage() {
       slug: product.slug,
       title: product.title,
       description: product.description,
+      imageUrl: product.imageUrl,
       minPriceCents: sql<number | null>`MIN(${variant.priceCents})`,
       maxPriceCents: sql<number | null>`MAX(${variant.priceCents})`,
     })
@@ -49,15 +51,20 @@ export default async function CatalogPage() {
               <li key={p.id}>
                 <Link
                   href={`${base}/products/${p.slug}`}
-                  className="block border border-border rounded p-4 hover:bg-muted/30 active:bg-muted"
+                  className="block border border-border rounded overflow-hidden hover:bg-muted/30 active:bg-muted"
                 >
-                  <h2 className="font-heading font-bold text-xl">{p.title}</h2>
-                  {p.description && (
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</p>
-                  )}
-                  <p className="mt-2 font-medium tabular-nums">
-                    <PriceRange min={p.minPriceCents} max={p.maxPriceCents} currency={storefront.currency} />
-                  </p>
+                  <div className="aspect-square bg-muted">
+                    <ProductImage src={p.imageUrl} alt={p.title} />
+                  </div>
+                  <div className="p-4">
+                    <h2 className="font-heading font-bold text-xl">{p.title}</h2>
+                    {p.description && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</p>
+                    )}
+                    <p className="mt-2 font-medium tabular-nums">
+                      <PriceRange min={p.minPriceCents} max={p.maxPriceCents} currency={storefront.currency} />
+                    </p>
+                  </div>
                 </Link>
               </li>
             ))}

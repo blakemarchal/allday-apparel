@@ -24,6 +24,10 @@ export const product = pgTable(
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     description: text('description'),
+    // Primary product image. Demo phase: a committed /demo/*.jpg path. Later:
+    // a Cloudflare R2 URL once the upload pipeline lands. NULL → branded
+    // placeholder tile in the UI.
+    imageUrl: text('image_url'),
     status: productStatusEnum('status').notNull().default('draft'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

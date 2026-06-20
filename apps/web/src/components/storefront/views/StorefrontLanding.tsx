@@ -27,31 +27,46 @@ export default async function StorefrontLanding() {
       <StorefrontHeader storefront={storefront} cartCount={cartCount} cross={crossLink(base)} />
 
       {/* Hero — palette + typeface come from the storefront theme tokens, so the
-          same markup reads premium-clean for apparel and loud for the character store. */}
+          same markup reads premium-clean for apparel and loud for the character
+          store. Optional full-bleed image (hero.image) sits under a scrim tinted
+          with the store's own background, so the foreground text stays readable
+          in either theme. */}
       <main>
-        <section className="px-6 py-24 sm:py-32 max-w-5xl mx-auto">
-          {hero.eyebrow && (
-            <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-accent font-medium mb-5">
-              {hero.eyebrow}
-            </p>
+        <section className={`relative ${hero.image ? 'py-28 sm:py-40' : 'py-24 sm:py-32'}`}>
+          {hero.image && (
+            <>
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${hero.image})` }}
+                aria-hidden
+              />
+              <div className="absolute inset-0 bg-background/75" aria-hidden />
+            </>
           )}
-          <h1 className="font-heading font-bold leading-[0.95] text-5xl sm:text-7xl lg:text-8xl max-w-3xl">
-            {headline}
-          </h1>
-          <div className="h-1 w-16 bg-accent mt-8 mb-8" aria-hidden />
-          {hero.sub && (
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
-              {hero.sub}
-            </p>
-          )}
-          <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Link
-              href={`${base}/products`}
-              className="bg-primary text-primary-foreground rounded px-8 py-4 text-lg font-medium hover:opacity-90 transition-opacity"
-            >
-              {hero.ctaLabel}
-            </Link>
-            <CrossStore base={base} />
+          <div className="relative px-6 max-w-5xl mx-auto">
+            {hero.eyebrow && (
+              <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-accent font-medium mb-5">
+                {hero.eyebrow}
+              </p>
+            )}
+            <h1 className="font-heading font-bold leading-[0.95] text-5xl sm:text-7xl lg:text-8xl max-w-3xl">
+              {headline}
+            </h1>
+            <div className="h-1 w-16 bg-accent mt-8 mb-8" aria-hidden />
+            {hero.sub && (
+              <p className="text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
+                {hero.sub}
+              </p>
+            )}
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <Link
+                href={`${base}/products`}
+                className="bg-primary text-primary-foreground rounded px-8 py-4 text-lg font-medium hover:opacity-90 transition-opacity"
+              >
+                {hero.ctaLabel}
+              </Link>
+              <CrossStore base={base} />
+            </div>
           </div>
         </section>
       </main>
